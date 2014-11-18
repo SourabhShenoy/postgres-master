@@ -4,7 +4,7 @@
  *	  POSTGRES buffer manager definitions.
  *
  *
- * Portions Copyright (c) 1996-2014, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2013, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/storage/bufmgr.h
@@ -225,5 +225,18 @@ extern void AtProcExit_LocalBuffers(void);
 /* in freelist.c */
 extern BufferAccessStrategy GetAccessStrategy(BufferAccessStrategyType btype);
 extern void FreeAccessStrategy(BufferAccessStrategy strategy);
+
+typedef enum PolicyKind
+{
+	POLICY_CLOCK = 0,
+	POLICY_LRU,
+	POLICY_MRU,
+	POLICY_2Q
+} PolicyKind;
+
+extern int BufferReplacementPolicy;
+extern const char *get_buffer_policy_str(PolicyKind policy);
+extern void BufferUnpinned(int bufid);
+
 
 #endif

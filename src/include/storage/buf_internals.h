@@ -5,7 +5,7 @@
  *	  strategy.
  *
  *
- * Portions Copyright (c) 1996-2014, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2013, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * src/include/storage/buf_internals.h
@@ -104,10 +104,7 @@ typedef struct buftag
 #define BufTableHashPartition(hashcode) \
 	((hashcode) % NUM_BUFFER_PARTITIONS)
 #define BufMappingPartitionLock(hashcode) \
-	(&MainLWLockArray[BUFFER_MAPPING_LWLOCK_OFFSET + \
-		BufTableHashPartition(hashcode)].lock)
-#define BufMappingPartitionLockByIndex(i) \
-	(&MainLWLockArray[BUFFER_MAPPING_LWLOCK_OFFSET + (i)].lock)
+	((LWLockId) (FirstBufMappingLock + BufTableHashPartition(hashcode)))
 
 /*
  *	BufferDesc -- shared descriptor/state data for a single shared buffer.
@@ -147,8 +144,12 @@ typedef struct sbufdesc
 	int			buf_id;			/* buffer's index number (from 0) */
 	int			freeNext;		/* link in freelist chain */
 
-	LWLock	   *io_in_progress_lock;	/* to wait for I/O to complete */
-	LWLock	   *content_lock;	/* to lock access to buffer contents */
+	LWLockId	io_in_progress_lock;	/* to wait for I/O to complete */
+	LWLockId	content_lock;	/* to lock access to buffer contents */
+	
+	volatile struct sbufdesc *next;
+	volatile struct sbufdesc *previous;
+
 } BufferDesc;
 
 #define BufferDescriptorGetBuffer(bdesc) ((bdesc)->buf_id + 1)
